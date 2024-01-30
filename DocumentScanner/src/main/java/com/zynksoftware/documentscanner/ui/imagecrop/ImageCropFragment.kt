@@ -20,10 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 package com.zynksoftware.documentscanner.ui.imagecrop
 
+import android.Manifest
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.PointF
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -33,12 +35,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.fondesa.kpermissions.allGranted
+import com.fondesa.kpermissions.allShouldShowRationale
+import com.fondesa.kpermissions.extension.permissionsBuilder
+import com.fondesa.kpermissions.extension.send
 import com.zynksoftware.documentscanner.R
 import com.zynksoftware.documentscanner.common.extensions.scaledBitmap
 import com.zynksoftware.documentscanner.common.utils.OpenCvNativeBridge
 import com.zynksoftware.documentscanner.model.DocumentScannerErrorModel
 import com.zynksoftware.documentscanner.ui.base.BaseFragment
 import com.zynksoftware.documentscanner.ui.scan.InternalScanActivity
+import com.zynksoftware.documentscanner.ui.utils.PermissionUtils
 import id.zelory.compressor.determineImageRotation
 import kotlinx.android.synthetic.main.fragment_image_crop.*
 
@@ -62,7 +69,10 @@ internal class ImageCropFragment : BaseFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        checkForStoragePermissions()
+    }
 
+    private fun startCroppingProcess(){
         val sourceBitmap = BitmapFactory.decodeFile(getScanActivity().originalImageFile.absolutePath)
         if (sourceBitmap != null) {
             selectedImage = determineImageRotation(getScanActivity().originalImageFile, sourceBitmap)
@@ -98,7 +108,9 @@ internal class ImageCropFragment : BaseFragment() {
             val scaledBitmap: Bitmap = selectedImage!!.scaledBitmap(holderImageCrop.width, holderImageCrop.height)
             imagePreview.setImageBitmap(scaledBitmap)
             val tempBitmap = (imagePreview.drawable as BitmapDrawable).bitmap
-            val pointFs = getEdgePoints(tempBitmap)
+            val pointFs = getScanActivity().predefinePointEdge?.takeIf {
+                it.isNotEmpty()
+            } ?: getEdgePoints(tempBitmap)
             Log.d(TAG, "ZDCgetEdgePoints ends ${System.currentTimeMillis()}")
             polygonView.setPoints(pointFs)
             polygonView.visibility = View.VISIBLE
@@ -160,5 +172,19 @@ internal class ImageCropFragment : BaseFragment() {
 
     private fun closeFragment() {
         getScanActivity().closeCurrentFragment()
+    }
+
+    private fun checkForStoragePermissions() {
+        permissionsBuilder(PermissionUtils.getStoragePermission())
+            .build()
+            .send { result ->
+                if (result.allGranted()) {
+                    startCroppingProcess()
+                } else if (result.allShouldShowRationale()) {
+                    onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.STORAGE_PERMISSION_REFUSED_WITHOUT_NEVER_ASK_AGAIN))
+                } else {
+                    onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.STORAGE_PERMISSION_REFUSED_GO_TO_SETTINGS))
+                }
+            }
     }
 }

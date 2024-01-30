@@ -21,18 +21,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 package com.zynksoftware.documentscanner.ui.scan
 
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.os.Bundle
 import android.util.Log
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.zynksoftware.documentscanner.R
 import com.zynksoftware.documentscanner.common.extensions.hide
 import com.zynksoftware.documentscanner.common.extensions.show
+import com.zynksoftware.documentscanner.common.utils.FileUriUtils
 import com.zynksoftware.documentscanner.manager.SessionManager
 import com.zynksoftware.documentscanner.model.DocumentScannerErrorModel
+import com.zynksoftware.documentscanner.model.ImageCrop
 import com.zynksoftware.documentscanner.model.ScannerResults
 import com.zynksoftware.documentscanner.ui.camerascreen.CameraScreenFragment
 import com.zynksoftware.documentscanner.ui.components.ProgressView
@@ -67,6 +71,7 @@ abstract class InternalScanActivity : AppCompatActivity() {
     }
 
     internal lateinit var originalImageFile: File
+    internal var predefinePointEdge: Map<Int, PointF>? = mapOf()
     internal var croppedImage: Bitmap? = null
     internal var transformedImage: Bitmap? = null
     private var imageQuality: Int = 100
@@ -193,5 +198,40 @@ abstract class InternalScanActivity : AppCompatActivity() {
         progressView.hide()
 
         showCameraScreen()
+    }
+
+    internal fun addFragmentContentCroppingLayoutInternal(imageCrop: ImageCrop?) {
+        // If the image to be cropped is null fallback to default
+        if (imageCrop == null) {
+            addFragmentContentLayoutInternal()
+            return
+        }
+
+        // Set the value
+        val imageUri = imageCrop.imageUri.toUri()
+        originalImageFile = File(FileUriUtils.getRealPath(this, imageUri).orEmpty())
+        predefinePointEdge = imageCrop.getPointF()
+
+        val frameLayout = FrameLayout(this)
+        frameLayout.id = R.id.zdcContent
+        addContentView(
+            frameLayout, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        val progressView = ProgressView(this)
+        progressView.id = R.id.zdcProgressView
+        addContentView(
+            progressView, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+
+        progressView.hide()
+
+        showImageCropFragment()
     }
 }

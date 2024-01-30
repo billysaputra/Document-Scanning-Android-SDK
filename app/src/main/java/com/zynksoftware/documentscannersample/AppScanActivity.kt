@@ -19,6 +19,7 @@ import com.fondesa.kpermissions.extension.permissionsBuilder
 import com.fondesa.kpermissions.extension.send
 import com.zynksoftware.documentscanner.ScanActivity
 import com.zynksoftware.documentscanner.model.DocumentScannerErrorModel
+import com.zynksoftware.documentscanner.model.ImageCrop
 import com.zynksoftware.documentscanner.model.ScannerResults
 import com.zynksoftware.documentscannersample.adapters.ImageAdapter
 import com.zynksoftware.documentscannersample.adapters.ImageAdapterListener
@@ -32,9 +33,14 @@ class AppScanActivity: ScanActivity(), ImageAdapterListener {
 
     companion object {
         private val TAG = AppScanActivity::class.simpleName
+        const val KEY_IMAGE_CROP = "key_image_crop"
 
-        fun start(context: Context) {
+        fun start(
+            context: Context,
+            imageCrop: ImageCrop?
+        ) {
             val intent = Intent(context, AppScanActivity::class.java)
+            intent.putExtra(KEY_IMAGE_CROP, imageCrop)
             context.startActivity(intent)
         }
     }
@@ -45,7 +51,8 @@ class AppScanActivity: ScanActivity(), ImageAdapterListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.app_scan_activity_layout)
-        addFragmentContentLayout()
+        val imageCropData = intent.getSerializableExtra(KEY_IMAGE_CROP) as? ImageCrop
+        addFragmentContentCroppingLayout(imageCropData)
     }
 
     override fun onError(error: DocumentScannerErrorModel) {

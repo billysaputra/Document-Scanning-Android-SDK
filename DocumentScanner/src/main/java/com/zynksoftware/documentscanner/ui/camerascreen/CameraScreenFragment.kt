@@ -41,6 +41,7 @@ import com.zynksoftware.documentscanner.model.DocumentScannerErrorModel
 import com.zynksoftware.documentscanner.ui.base.BaseFragment
 import com.zynksoftware.documentscanner.ui.components.scansurface.ScanSurfaceListener
 import com.zynksoftware.documentscanner.ui.scan.InternalScanActivity
+import com.zynksoftware.documentscanner.ui.utils.PermissionUtils
 import kotlinx.android.synthetic.main.fragment_camera_screen.*
 import java.io.File
 import java.io.FileNotFoundException
@@ -154,7 +155,7 @@ internal class CameraScreenFragment: BaseFragment(), ScanSurfaceListener  {
     }
 
     private fun checkForStoragePermissions() {
-        permissionsBuilder(getStoragePermission())
+        permissionsBuilder(PermissionUtils.getStoragePermission())
             .build()
             .send { result ->
                 if (result.allGranted()) {
@@ -165,14 +166,6 @@ internal class CameraScreenFragment: BaseFragment(), ScanSurfaceListener  {
                     onError(DocumentScannerErrorModel(DocumentScannerErrorModel.ErrorMessage.STORAGE_PERMISSION_REFUSED_GO_TO_SETTINGS))
                 }
             }
-    }
-
-    private fun getStoragePermission(): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
     }
 
     private fun startCamera() {
