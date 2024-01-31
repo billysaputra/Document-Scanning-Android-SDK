@@ -171,7 +171,11 @@ internal class ImageCropFragment : BaseFragment() {
     }
 
     private fun closeFragment() {
-        getScanActivity().closeCurrentFragment()
+        if (getScanActivity().isImageCropUsageOnly) {
+            getScanActivity().onClose()
+        } else {
+            getScanActivity().closeCurrentFragment()
+        }
     }
 
     private fun checkForStoragePermissions() {

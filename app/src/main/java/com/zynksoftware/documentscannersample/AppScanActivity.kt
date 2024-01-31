@@ -34,6 +34,7 @@ class AppScanActivity: ScanActivity(), ImageAdapterListener {
     companion object {
         private val TAG = AppScanActivity::class.simpleName
         const val KEY_IMAGE_CROP = "key_image_crop"
+        const val KEY_IMAGE_RESULT_PATH = "key_image_result_path"
 
         fun start(
             context: Context,
@@ -60,7 +61,8 @@ class AppScanActivity: ScanActivity(), ImageAdapterListener {
     }
 
     override fun onSuccess(scannerResults: ScannerResults) {
-        initViewPager(scannerResults)
+        setResult(RESULT_OK, intent.putExtra(KEY_IMAGE_RESULT_PATH, scannerResults.croppedImageFile?.absolutePath))
+        finish()
     }
 
     override fun onClose() {

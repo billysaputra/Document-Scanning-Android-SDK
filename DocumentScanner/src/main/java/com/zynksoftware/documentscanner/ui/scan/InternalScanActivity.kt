@@ -78,6 +78,7 @@ abstract class InternalScanActivity : AppCompatActivity() {
     private var imageSize: Long = NOT_INITIALIZED
     private lateinit var imageType: Bitmap.CompressFormat
     internal var shouldCallOnClose = true
+    internal var isImageCropUsageOnly = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -201,16 +202,18 @@ abstract class InternalScanActivity : AppCompatActivity() {
     }
 
     internal fun addFragmentContentCroppingLayoutInternal(imageCrop: ImageCrop?) {
-        // If the image to be cropped is null fallback to default
+        // If the image to be cropped is null, then fallback to default
         if (imageCrop == null) {
+            isImageCropUsageOnly = false
             addFragmentContentLayoutInternal()
             return
         }
 
-        // Set the value
+        // Set additional value to use image crop feature only
         val imageUri = imageCrop.imageUri.toUri()
         originalImageFile = File(FileUriUtils.getRealPath(this, imageUri).orEmpty())
         predefinePointEdge = imageCrop.getPointF()
+        isImageCropUsageOnly = true
 
         val frameLayout = FrameLayout(this)
         frameLayout.id = R.id.zdcContent

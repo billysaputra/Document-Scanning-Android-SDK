@@ -6,11 +6,14 @@ import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import com.zynksoftware.documentscanner.model.ImageCrop
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
+    private var imagePath: String = ""
     private val changeImage =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == Activity.RESULT_OK) {
@@ -24,10 +27,27 @@ class MainActivity : AppCompatActivity() {
                         xMax = 200,
                         yMax = 100
                     )
-                    AppScanActivity.start(this, imageCrop)
+                    launchImageCrop(imageCrop)
                 }
             }
         }
+
+    private val cropLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.extras?.getString(AppScanActivity.KEY_IMAGE_RESULT_PATH).let {
+                imagePath = it.orEmpty()
+            }
+            val imageFile = File(imagePath)
+            if (imageFile.exists()) {
+                val bitmap = MediaStore.Images.Media.getBitmap(
+                    this.contentResolver, imageFile.toUri()
+                )
+                ivImageResult.setImageBitmap(bitmap)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +63,12 @@ class MainActivity : AppCompatActivity() {
         cropImageButton.setOnClickListener {
             showImagePicker()
         }
+    }
+
+    private fun launchImageCrop(imageCrop: ImageCrop) {
+        val takePictureIntent = Intent(this, AppScanActivity::class.java)
+        takePictureIntent.putExtra(AppScanActivity.KEY_IMAGE_CROP, imageCrop)
+        cropLauncher.launch(takePictureIntent)
     }
 
     private fun showImagePicker() {
